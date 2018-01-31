@@ -1,8 +1,9 @@
-######################## Compare PRISM to limno data ###########################################
+######################## Compare PRISM to limno data #####################################################
 # Date: 9-11-17
-# updated: 1-29-18
+# updated: 1-31-18
 # Author: Ian McCullough, immccull@gmail.com
-################################################################################################
+# Note: NE (Northeast) refers to forested region, UM (Upper Midwest) refers to mixed agricultural region
+##########################################################################################################
 
 #### R libraries ####
 library(LAGOSNE)
@@ -20,7 +21,7 @@ last_day = '0915'
 min_years = 25 #minimum number of years of data allowed in analysis
 pvalue_cutoff = 0.05 #significance level
 
-limno_var = 'secchi' #secchi, tn, tp, chla
+limno_var = 'secchi'
 
 # monthly and annual climate variables of interest
 vars_of_interest = c('wyppt','fall_ppt','winter_ppt','spring_ppt','summer_ppt',
@@ -31,22 +32,22 @@ vars_of_interest = c('wyppt','fall_ppt','winter_ppt','spring_ppt','summer_ppt',
 ##### input data from LAGOS NE #####
 # About and links to public datasets: https://lagoslakes.org/
 dt <- lagosne_load(version = '1.087.1') #returns list of data.frame objects in LAGOS NE
-secchi <- dt$secchi
-epi_nutr <- dt$epi_nutr
+secchi <- dt$secchi #type ?secchi for information about this data frame (Secchi/Water Clarity)
+epi_nutr <- dt$epi_nutr #type ?epi_nutr for information about this data frame (Epilimnion Water Quality)
 
 # GIS data downloaded and stored locally from: 
 # Soranno P., K. Cheruvelil. (2017c). LAGOS-NE-GIS v1.0: A module for LAGOS-NE, 
 # a multi-scaled geospatial and temporal database of lake ecological context and water 
 # quality for thousands of U.S. Lakes: 2013-1925. Environmental Data Initiative. 
+# Package ID: edi.98.1
 # http://dx.doi.org/10.6073/pasta/fb4f5687339bec467ce0ed1ea0b5f0ca. Dataset accessed 9/26/2017.
+
+# LAGOS_NE_All_Lakes_4ha_POINTS.zip (5.8 MB)
 lakes_4ha_points <- shapefile("C:/Ian_GIS/LAGOS-NE-GISv1.0/LAGOS_NE_All_Lakes_4ha_POINTS/LAGOS_NE_All_Lakes_4ha_POINTS.shp")
 lakes_4ha_df <- lakes_4ha_points@data
 
+# STATE.zip (1.8 MB)
 LAGOS_NE_states <- shapefile("C:/Ian_GIS/LAGOS-NE-GISv1.0/STATE/STATE.shp")
-
-# Sam Oliver depth data/predictions
-# Oliver, Samantha K., et al. "Prediction of lake depth across a 17-state region in the United States." Inland Waters 6.3 (2016): 314-324.
-depth <- lagos_load_oliver_2015()
 
 ########################### main program ###############################
 # first part is wrangling data
@@ -561,7 +562,7 @@ final_clim_WQ_cor_summary <- cbind.data.frame(climateWQ_cor_UM_summary, climateW
 #write.csv(final_clim_WQ_cor_summary, "C:/Ian_GIS/GeographicPatterns/Tables/ClimateWQCorrelationSummary.csv")
 
 ################ paneled histogram of climate-water clarity correlations, comparing regions ############
-png('C:/Ian_GIS/GeographicPatterns/Figures/paneled_hist.png',width = 3,height = 6.75,units = 'in',res=300) #was 3.88 by 9 in
+#png('C:/Ian_GIS/GeographicPatterns/Figures/paneled_hist.png',width = 2.5,height = 5.8,units = 'in',res=600) #was 3.88 by 9 in
 par(mfrow=c(3,1))
 par(mar=c(0.5,3,0.5,0.5)) #bot,left,top,right
 # first plot
@@ -588,7 +589,7 @@ hist(lake_output_NE[,plot_var], xlim=c(-0.9,0.9), ylim=c(0,55), col="orange", br
 hist(lake_output_UM[,plot_var], add=T, xlim=c(-0.9,0.9), ylim=c(0,55), breaks=seq(-0.9,0.9,0.1), col=rgb(0.5,0.5,0.5, 0.5),
      xlab='', xaxt='n', yaxt='n', main='')
 axis(side=1, at=seq(-0.9,0.9,0.2), labels=seq(-0.9,0.9,0.2), cex.axis=0.8)
-dev.off()
+#dev.off()
 
 ################################ gradient analysis ####################################
 # relationships between climate sensitivities and ecological context variables
@@ -602,90 +603,6 @@ x_df$yCor = lake_output@coords[,2]
 pval_df = as.data.frame(lake_output_p@data)
 pval_df$xCor = lake_output_p@coords[,1]
 pval_df$yCor = lake_output_p@coords[,2]
-
-############ gradients in sam oliver data (depth, lat/long, area) ###########
-focal_var_vector <- names(x_df)[33:102]
-depth_gradient <- merge(big_Mama, depth, by='lagoslakeid')#lose lakes without observed or predicted depth; oh well
-
-cor_list <- list()
-for (i in 1:length(focal_var_vector)){
-  depth_gradient <- merge(big_Mama[,c(focal_var_vector[i],'lagoslakeid')], depth, by='lagoslakeid')
-  whee <- as.data.frame(suppressWarnings(cor(depth_gradient[sapply(depth_gradient, is.numeric)], use='pairwise.complete.obs')))
-  whee <- as.data.frame(whee[1])
-  rowname_vec <- rownames(whee)[2:nrow(whee)]
-  whee <- as.data.frame(whee[-1,]) #delete first row; correlation with itself
-  names(whee) <- focal_var_vector[i]
-  rownames(whee) <- rowname_vec
-  cor_list[i] <- whee
-}
-
-depth_cor_table <- do.call(cbind.data.frame, cor_list)
-rownames(depth_cor_table) <- rowname_vec
-colnames(depth_cor_table) <- focal_var_vector
-depth_cor_table <- as.data.frame(t(depth_cor_table))
-
-fall <- depth_cor_table[grep("fall", rownames(depth_cor_table)), ]
-winter <- depth_cor_table[grep("winter", rownames(depth_cor_table)), ]
-spring <- depth_cor_table[grep("spring", rownames(depth_cor_table)), ]
-summer <- depth_cor_table[grep("summer", rownames(depth_cor_table)), ]
-wy <- depth_cor_table[grep("wy", rownames(depth_cor_table)), ]
-
-oliver_depth_cor_seasonal <- rbind.data.frame(fall,winter,spring,summer,wy)
-
-# data frames for scatter plots
-depth_gradient_df <- merge(big_Mama, depth, by='lagoslakeid')
-depth_gradient_df <- merge(depth_gradient_df, state_df, by.x='lagoslakeid',by.y='lagoslakei')
-depth_gradient_df$StateFac <- as.factor(depth_gradient_df$STATE)
-
-state_abbr <- levels(depth_gradient_df$StateFac)
-
-### divide depth gradient analysis by region 
-depth_gradient_df_UM <- subset(depth_gradient_df, Region =='UM')
-depth_gradient_df_NE <- subset(depth_gradient_df, Region =='NE')
-
-# loop through gradient variable to plot correlations between them and select climate variable
-depth_gradient_variables = names(depth_gradient_df_UM)[74:78]
-plot_var = 'summer_ppt'
-for (i in 1:length(depth_gradient_variables)) {
-  gradient_var <- depth_gradient_variables[i]
-  par(mfrow=c(1,2))
-  plot(depth_gradient_df_UM[,plot_var]~depth_gradient_df_UM[,depth_gradient_variables[i]], 
-       main=paste0(limno_var, ' Upper Midwest'), pch=20, col='red',
-       xlim=c(), ylim=c(-1,1), ylab=paste0('sensitivity of ', limno_var, ' to ', plot_var),
-       xlab=depth_gradient_variables[i])
-  abline(0,0, lty=2)
-  # create linear model to calculate coef (slope)
-  lm <- lm(depth_gradient_df_UM[,plot_var]~ depth_gradient_df_UM[,depth_gradient_variables[i]])
-  slope <- round(lm$coefficients[2], digits=3)
-  abline(lm)
-  cortest <- cor.test(depth_gradient_df_UM[,plot_var], depth_gradient_df_UM[,depth_gradient_variables[i]], alternative = 'two.sided',
-           method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
-  plot_pval <- cortest$p.value
-  legend('topright', bty='n', legend=paste0('r = ',round(cor(depth_gradient_df_UM[,plot_var], depth_gradient_df_UM[,depth_gradient_variables[i]], 
-                                                             use='pairwise.complete.obs'), digits=3)))
-  legend('topleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
-  legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
-  legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(depth_gradient_df_UM[,gradient_var]))))
-  mtext(side=3, paste0('gradient variable = ',gradient_var, ', climate variable = ', plot_var), cex=0.75)
-  
-  plot(depth_gradient_df_NE[,plot_var]~depth_gradient_df_NE[,depth_gradient_variables[i]], 
-       main=paste0(limno_var, ' Northeast'), pch=20, col='dodgerblue',
-       xlim=c(), ylim=c(-1,1), ylab=paste0('sensitivity of ', limno_var, ' to ', plot_var),
-       xlab=depth_gradient_variables[i])
-  abline(0,0, lty=2)
-  lm <- lm(depth_gradient_df_NE[,plot_var]~ depth_gradient_df_NE[,depth_gradient_variables[i]])
-  slope <- round(lm$coefficients[2], digits=3)
-  abline(lm)
-  cortest <- cor.test(depth_gradient_df_NE[,plot_var], depth_gradient_df_NE[,depth_gradient_variables[i]], alternative = 'two.sided',
-                     method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
-  plot_pval <- cortest$p.value
-  legend('topright', bty='n', legend=paste0('r = ',round(cor(depth_gradient_df_NE[,plot_var], depth_gradient_df_NE[,depth_gradient_variables[i]], 
-                                                             use='pairwise.complete.obs'), digits=3)))
-  legend('topleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
-  legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
-  legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(depth_gradient_df_NE[,gradient_var]))))
-  mtext(side=3, paste0('gradient variable = ',gradient_var, ', climate variable = ', plot_var), cex=0.75)
-}
 
 ############ depth gradients from LAGOS data (mean, max depth; no predicted values) ###########
 # warning: not all lakes necessarily have associated depth data
@@ -1189,19 +1106,23 @@ state_abbr <- levels(PRISM_gradient_df$StateFac)
 # adjust names manually to avoid confusion between climate variables and climate sensitivities
 first_half_names <- names(PRISM_gradient_df)[1:71]
 first_half_names <- gsub("ppt.x", "ppt", first_half_names)
+first_half_names <- gsub("tmean.x", "tmean", first_half_names)
+first_half_names <- gsub("tmin.x", "tmin", first_half_names)
+first_half_names <- gsub("tmax.x", "tmax", first_half_names)
 
 second_half_names <- names(PRISM_gradient_df[72:ncol(PRISM_gradient_df)])
-second_half_names <- gsub("ppt.y", "ppt", second_half_names)
-second_half_names <- gsub("T_mean", "tmean", second_half_names)
-second_half_names <- gsub("tmn", "tmin", second_half_names) #tmn, tmx relicts from UCSB days
+second_half_names <- gsub("tmn", "tmin", second_half_names)
 second_half_names <- gsub("tmx", "tmax", second_half_names)
-second_half_names[64:68] <- c('fall_tmean','winter_tmean','spring_tmean','summer_tmean',
-                             'annual_tmean')
-second_half_names[1:(length(second_half_names)-2)] <- paste0(second_half_names[1:(length(second_half_names)-2)], "_PRISM")
+second_half_names <- gsub("ppt.y", "ppt_PRISM", second_half_names)
+second_half_names <- gsub("tmax.y", "tmax_PRISM", second_half_names)
+second_half_names <- gsub("tmin.y", "tmin_PRISM", second_half_names)
+second_half_names <- gsub("tmean.y", "tmean_PRISM", second_half_names)
+second_half_names[69:71] <- c('wytmin_PRISM','wytmax_PRISM','wytmean_PRISM')
+
 full_names <- c(first_half_names, second_half_names)
 colnames(PRISM_gradient_df) <- full_names
 
-### divide PRISM (ian-extracted) climate gradient analysis by region 
+### divide PRISM climate gradient analysis by region 
 PRISM_gradient_df_UM <- subset(PRISM_gradient_df, Region =='UM')
 PRISM_gradient_df_NE <- subset(PRISM_gradient_df, Region =='NE')
 
@@ -1239,6 +1160,48 @@ slope <- round(lm$coefficients[2], digits=3)
 abline(lm, lty=1)
 cortest <- cor.test(PRISM_gradient_df_NE[,plot_var], PRISM_gradient_df_NE[,gradient_var], alternative = 'two.sided',
                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
+plot_pval <- cortest$p.value
+legend('topright', bty='n', legend=paste0('r = ',round(cor(PRISM_gradient_df_NE[,plot_var], PRISM_gradient_df_NE[,gradient_var], 
+                                                           use='pairwise.complete.obs'), digits=3)))
+legend('topleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
+legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
+legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(PRISM_gradient_df_NE[,gradient_var]))))
+mtext(side=3, paste0('gradient variable = ',gradient_var, ', climate variable = ', plot_var), cex=0.75)
+
+# single variable plot of regions side by side
+plot_var = 'summer_ppt'
+gradient_var = 'summer_ppt_PRISM'
+par(mfrow=c(1,2))
+plot(PRISM_gradient_df_UM[,plot_var]~PRISM_gradient_df_UM[,gradient_var], 
+     main=paste0(limno_var, ' Upper Midwest'), pch=20, col='red',
+     xlim=c(200,450), ylim=c(-1,1), ylab=paste0('sensitivity of ', limno_var, ' to ', plot_var),
+     xlab=gradient_var)
+abline(0,0, lty=2)
+# create linear model to calculate coef (slope)
+lm <- lm(PRISM_gradient_df_UM[,plot_var]~ PRISM_gradient_df_UM[,gradient_var])
+slope <- round(lm$coefficients[2], digits=3)
+abline(lm, lty=1)
+cortest <- cor.test(PRISM_gradient_df_UM[,plot_var], PRISM_gradient_df_UM[,gradient_var], alternative = 'two.sided',
+                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
+plot_pval <- cortest$p.value
+legend('topright', bty='n', legend=paste0('r = ',round(cor(PRISM_gradient_df_UM[,plot_var], PRISM_gradient_df_UM[,gradient_var], 
+                                                           use='pairwise.complete.obs'), digits=3)))
+legend('topleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
+legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
+legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(PRISM_gradient_df_UM[,gradient_var]))))
+mtext(side=3, paste0('gradient variable = ',gradient_var, ', climate variable = ', plot_var), cex=0.75)
+
+plot(PRISM_gradient_df_NE[,plot_var]~PRISM_gradient_df_NE[,gradient_var], 
+     main=paste0(limno_var, ' Northeast'), pch=20, col='dodgerblue',
+     xlim=c(200,450), ylim=c(-1,1), ylab=paste0('sensitivity of ', limno_var, ' to ', plot_var),
+     xlab=gradient_var)
+abline(0,0, lty=2)
+# create linear model to calculate coef (slope)
+lm <- lm(PRISM_gradient_df_NE[,plot_var]~ PRISM_gradient_df_NE[,gradient_var])
+slope <- round(lm$coefficients[2], digits=3)
+abline(lm, lty=1)
+cortest <- cor.test(PRISM_gradient_df_NE[,plot_var], PRISM_gradient_df_NE[,gradient_var], alternative = 'two.sided',
+                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
 plot_pval <- cortest$p.value
 legend('topright', bty='n', legend=paste0('r = ',round(cor(PRISM_gradient_df_NE[,plot_var], PRISM_gradient_df_NE[,gradient_var], 
                                                            use='pairwise.complete.obs'), digits=3)))
@@ -1367,15 +1330,37 @@ nrow(subset(TP_gradient_df_UM, TP >= 30)) #eutro
 
 ########## paneled gradient plots for paper ############
 # summer ppt sensitivity
-png('C:/Ian_GIS/GeographicPatterns/Figures/CorPlot_summer_ppt_panel.png',width = 6,height = 6, units = 'in',res=300)  
+#png('C:/Ian_GIS/GeographicPatterns/Figures/CorPlot_summer_ppt_panel.png',width = 6,height = 6, units = 'in',res=600)  
 # first plot
+plot_var = 'summer_ppt'
+gradient_var = 'chla'
 par(mfrow=c(2,2))
 par(mar=c(5,4,1,1))
+plot(chla_gradient_df_NE[,plot_var]~chla_gradient_df_NE[,gradient_var], 
+     pch=20, col='orange', main='',
+     xlim=c(0,40), ylim=c(-1,1), ylab='correlation coefficient (r)',
+     xlab='Chlorophyll-a (µg/L)', las=1)
+abline(0,0, lty=2)
+# create linear model to calculate coef (slope)
+lm <- lm(chla_gradient_df_NE[,plot_var]~ chla_gradient_df_NE[,gradient_var])
+slope <- round(lm$coefficients[2], digits=3)
+abline(lm, lty=1)
+cortest <- cor.test(chla_gradient_df_NE[,plot_var], chla_gradient_df_NE[,gradient_var], alternative = 'two.sided',
+                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
+plot_pval <- cortest$p.value
+legend('topright', bty='n', legend=paste0('r = ',round(cor(chla_gradient_df_NE[,plot_var], chla_gradient_df_NE[,gradient_var], 
+                                                           use='pairwise.complete.obs'), digits=3)))
+legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
+#legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
+legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(chla_gradient_df_NE[,gradient_var]))))
+
+# second plot
+par(mar=c(5,1,1,4))
 gradient_var = 'TP'
 plot_var = 'summer_ppt'
 plot(TP_gradient_df_NE[,plot_var]~TP_gradient_df_NE[,gradient_var], 
      main='', pch=20, col='orange',
-     xlim=c(0,50), ylim=c(-1,1), ylab='correlation coefficient (r)',
+     xlim=c(0,50), ylim=c(-1,1), ylab='', yaxt='n',
      xlab='Total phosphorus (µg/L)', las=1)
 abline(0,0, lty=2)
 # create linear model to calculate coef (slope)
@@ -1390,9 +1375,30 @@ legend('topright', bty='n', legend=paste0('r = ',round(cor(TP_gradient_df_NE[,pl
 legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
 #legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
 legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(TP_gradient_df_NE[,gradient_var]))))
-#mtext(side=3, 'Average summer maximum temperature (°C)', cex=0.75)
 
-# second plot
+# third plot
+plot_var = 'summer_ppt'
+gradient_var = 'hu12_runoff_mean'
+par(mar=c(5,4,1,1))
+plot(hu12_gradient_df_NE[,plot_var]~hu12_gradient_df_NE[,gradient_var], 
+     pch=20, col='orange', main='',
+     xlim=c(18,32), ylim=c(-1,1), ylab='correlation coefficient (r)',
+     xlab='Mean annual runoff (in/yr)')
+abline(0,0, lty=2)
+# create linear model to calculate coef (slope)
+lm <- lm(hu12_gradient_df_NE[,plot_var]~ hu12_gradient_df_NE[,gradient_var])
+slope <- round(lm$coefficients[2], digits=3)
+abline(lm, lty=1)
+cortest <- cor.test(hu12_gradient_df_NE[,plot_var], hu12_gradient_df_NE[,gradient_var], alternative = 'two.sided',
+                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
+plot_pval <- cortest$p.value
+legend('topright', bty='n', legend=paste0('r = ',round(cor(hu12_gradient_df_NE[,plot_var], hu12_gradient_df_NE[,gradient_var], 
+                                                           use='pairwise.complete.obs'), digits=3)))
+legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
+#legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
+legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(hu12_gradient_df_NE[,gradient_var]))))
+
+# fourth plot
 plot_var = 'summer_ppt'
 gradient_var = 'maxdepth'
 par(mar=c(5,1,1,4))
@@ -1406,65 +1412,17 @@ slope <- round(lm$coefficients[2], digits=3)
 abline(lm)
 cortest <- cor.test(depth_gradient2_df_NE[,plot_var], depth_gradient2_df_NE[,gradient_var], alternative = 'two.sided',
                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
-plot_pval <- cortest$p.value
 legend('topright', bty='n', legend=paste0('r = ',round(cor(depth_gradient2_df_NE[,plot_var], depth_gradient2_df_NE[,gradient_var], 
                                                            use='pairwise.complete.obs'), digits=3)))
 legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
 #legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
 legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(depth_gradient2_df_NE[,gradient_var]))))
-#mtext(side=3, 'Total summer precipitation (mm)',cex=0.75)
-
-# third plot
-plot_var = 'summer_ppt'
-gradient_var = 'chla'
-par(mar=c(5,4,1,1))
-plot(chla_gradient_df_NE[,plot_var]~chla_gradient_df_NE[,gradient_var], 
-     pch=20, col='orange', main='',
-     xlim=c(0,40), ylim=c(-1,1), ylab='correlation coefficient (r)',
-     xlab='Chlorophyll-a (µg/L)', las=1)
-abline(0,0, lty=2)
-# create linear model to calculate coef (slope)
-lm <- lm(chla_gradient_df_NE[,plot_var]~ chla_gradient_df_NE[,gradient_var])
-slope <- round(lm$coefficients[2], digits=3)
-abline(lm, lty=1)
-cortest <- cor.test(chla_gradient_df_NE[,plot_var], chla_gradient_df_NE[,gradient_var], alternative = 'two.sided',
-                   method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
-plot_pval <- cortest$p.value
-legend('topright', bty='n', legend=paste0('r = ',round(cor(chla_gradient_df_NE[,plot_var], chla_gradient_df_NE[,gradient_var], 
-                                                           use='pairwise.complete.obs'), digits=3)))
-legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
-#legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
-legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(chla_gradient_df_NE[,gradient_var]))))
-#mtext(side=3, 'Average summer maximum temperature (°C)', cex=0.75)
-
-# fourth plot
-plot_var = 'summer_ppt'
-gradient_var = 'hu12_runoff_mean'
-par(mar=c(5,1,1,4))
-plot(hu12_gradient_df_NE[,plot_var]~hu12_gradient_df_NE[,gradient_var], 
-     pch=20, col='orange', main='',
-     xlim=c(18,32), ylim=c(-1,1), ylab='', yaxt='n',
-     xlab='Mean annual runoff (in/yr)')
-abline(0,0, lty=2)
-# create linear model to calculate coef (slope)
-lm <- lm(hu12_gradient_df_NE[,plot_var]~ hu12_gradient_df_NE[,gradient_var])
-slope <- round(lm$coefficients[2], digits=3)
-abline(lm, lty=1)
-cortest <- cor.test(hu12_gradient_df_NE[,plot_var], hu12_gradient_df_NE[,gradient_var], alternative = 'two.sided',
-                   method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
-plot_pval <- cortest$p.value
-legend('topright', bty='n', legend=paste0('r = ',round(cor(hu12_gradient_df_NE[,plot_var], hu12_gradient_df_NE[,gradient_var], 
-                                                           use='pairwise.complete.obs'), digits=3)))
-legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
-#legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
-legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(hu12_gradient_df_NE[,gradient_var]))))
-#mtext(side=3, 'Average summer maximum temperature (°C)', cex=0.75)
-dev.off()
+#dev.off()
 
 ## summer tmax sensitivity paneled plot
-png('C:/Ian_GIS/GeographicPatterns/Figures/CorPlot_summer_tmax_panel.png',width = 6,height = 6, units = 'in',res=300)  
-# first plot
+#png('C:/Ian_GIS/GeographicPatterns/Figures/CorPlot_summer_tmax_panel.png',width = 6,height = 6, units = 'in',res=600)  
 par(mfrow=c(2,2))
+# first plot
 par(mar=c(5,4,1,1))
 gradient_var = 'TP'
 plot_var = 'summer_tmax'
@@ -1489,34 +1447,11 @@ legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(TP_gradient_
 
 # second plot
 plot_var = 'summer_tmax'
-gradient_var = 'summer_tmax_PRISM'
-par(mar=c(5,1,1,4))
-plot(PRISM_gradient_df_UM[,plot_var]~PRISM_gradient_df_UM[,gradient_var], 
-     pch=20, col='gray66', main='',
-     xlim=c(22,32), ylim=c(-1,1), ylab='correlation coefficient (r)',
-     xlab='Average summer tmax (°C)', yaxt='n')
-abline(0,0, lty=2)
-# create linear model to calculate coef (slope)
-lm <- lm(PRISM_gradient_df_UM[,plot_var]~ PRISM_gradient_df_UM[,gradient_var])
-slope <- round(lm$coefficients[2], digits=3)
-abline(lm, lty=1)
-cortest <- cor.test(PRISM_gradient_df_UM[,plot_var], PRISM_gradient_df_UM[,gradient_var], alternative = 'two.sided',
-                   method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
-plot_pval <- cortest$p.value
-legend('topright', bty='n', legend=paste0('r = ',round(cor(PRISM_gradient_df_UM[,plot_var], PRISM_gradient_df_UM[,gradient_var], 
-                                                           use='pairwise.complete.obs'), digits=3)))
-legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
-#legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
-legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(PRISM_gradient_df_UM[,gradient_var]))))
-#mtext(side=3, 'Average summer maximum temperature (°C)', cex=0.75)
-
-# third plot
-plot_var = 'summer_tmax'
 gradient_var = 'total_forest_pct_1992'
-par(mar=c(5,4,1,1))
+par(mar=c(5,1,1,4))
 plot(buffer100_gradient_df_UM[,plot_var]~buffer100_gradient_df_UM[,gradient_var], 
      main='', pch=20, col='gray66', las=1,
-     xlim=c(0,100), ylim=c(-1,1), ylab='correlation coefficient (r)',
+     xlim=c(0,100), ylim=c(-1,1), ylab='', yaxt='n',
      xlab='Percent forest within 100 m buffer')
 abline(0,0, lty=2)
 # create linear model to calculate coef (slope)
@@ -1524,41 +1459,61 @@ lm <- lm(buffer100_gradient_df_UM[,plot_var]~ buffer100_gradient_df_UM[,gradient
 slope <- round(lm$coefficients[2], digits=3)
 abline(lm, lty=1)
 cortest <- cor.test(buffer100_gradient_df_UM[,plot_var], buffer100_gradient_df_UM[,gradient_var], alternative = 'two.sided',
-                   method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
+                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
 plot_pval <- cortest$p.value
 legend('topright', bty='n', legend=paste0('r = ',round(cor(buffer100_gradient_df_UM[,plot_var], buffer100_gradient_df_UM[,gradient_var], 
                                                            use='pairwise.complete.obs'), digits=3)))
 legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
 #legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
 legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(buffer100_gradient_df_UM[,gradient_var]))))
-#mtext(side=3, paste0('gradient variable = ',gradient_var, ', climate variable = ', plot_var), cex=0.75)
 
-# fourth plot
+# third plot
 plot_var = 'summer_tmax'
-gradient_var = 'chla'
-par(mar=c(5,1,1,4))
-plot(chla_gradient_df_UM[,plot_var]~chla_gradient_df_UM[,gradient_var], 
+gradient_var = 'iws_lakeareaha'
+par(mar=c(5,4,1,1))
+plot(iws_gradient_df_UM_areaclean[,plot_var]~iws_gradient_df_UM_areaclean[,gradient_var], 
      pch=20, col='gray66', main='',
-     xlim=c(0,40), ylim=c(-1,1), ylab='correlation coefficient (r)',
-     xlab='Chlorophyll-a (µg/L)', yaxt='n')
+     xlim=c(0,2000), ylim=c(-1,1), ylab='correlation coefficient (r)',
+     xlab='Lake area (ha)')
 abline(0,0, lty=2)
 # create linear model to calculate coef (slope)
-lm <- lm(chla_gradient_df_UM[,plot_var]~ chla_gradient_df_UM[,gradient_var])
+lm <- lm(iws_gradient_df_UM_areaclean[,plot_var]~ iws_gradient_df_UM_areaclean[,gradient_var])
 slope <- round(lm$coefficients[2], digits=3)
 abline(lm, lty=1)
-cortest <- cor.test(chla_gradient_df_UM[,plot_var], chla_gradient_df_UM[,gradient_var], alternative = 'two.sided',
-                   method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
+cortest <- cor.test(iws_gradient_df_UM_areaclean[,plot_var], iws_gradient_df_UM_areaclean[,gradient_var], alternative = 'two.sided',
+                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
 plot_pval <- cortest$p.value
-legend('topright', bty='n', legend=paste0('r = ',round(cor(chla_gradient_df_UM[,plot_var], chla_gradient_df_UM[,gradient_var], 
+legend('topright', bty='n', legend=paste0('r = ',round(cor(iws_gradient_df_UM_areaclean[,plot_var], iws_gradient_df_UM_areaclean[,gradient_var], 
                                                            use='pairwise.complete.obs'), digits=3)))
 legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
 #legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
-legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(chla_gradient_df_UM[,gradient_var]))))
-#mtext(side=3, 'Average summer maximum temperature (°C)', cex=0.75)
-dev.off()
+legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(iws_gradient_df_UM_areaclean[,gradient_var]))))
+
+# fourth plot
+plot_var = 'summer_tmax'
+gradient_var = 'maxdepth'
+par(mar=c(5,1,1,4))
+plot(depth_gradient2_df_UM[,plot_var]~depth_gradient2_df_UM[,gradient_var], 
+     pch=20, col='gray66', main='',
+     xlim=c(0,50), ylim=c(-1,1), ylab='', yaxt='n',
+     xlab='Maximum depth (m)')
+abline(0,0, lty=2)
+# create linear model to calculate coef (slope)
+lm <- lm(depth_gradient2_df_UM[,plot_var]~ depth_gradient2_df_UM[,gradient_var])
+slope <- round(lm$coefficients[2], digits=3)
+abline(lm, lty=1)
+cortest <- cor.test(depth_gradient2_df_UM[,plot_var], depth_gradient2_df_UM[,gradient_var], alternative = 'two.sided',
+                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
+plot_pval <- cortest$p.value
+legend('topright', bty='n', legend=paste0('r = ',round(cor(depth_gradient2_df_UM[,plot_var], depth_gradient2_df_UM[,gradient_var], 
+                                                           use='pairwise.complete.obs'), digits=3)))
+legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
+#legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
+legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(depth_gradient2_df_UM[,gradient_var]))))
+#dev.off()
 
 ##### merge together gradient analyses from seasonal clim variables #####
-seasonal_gradients_df <- cbind.data.frame(oliver_depth_cor_seasonal, LAGOS_depth_cor_seasonal,
+seasonal_gradients_df <- cbind.data.frame(LAGOS_depth_cor_seasonal,
                                          iws_cor_seasonal, iws_LULC_cor_seasonal,
                                          iws_conn_cor_seasonal, hu12_climate_cor_seasonal,
                                          PRISM_climate_cor_seasonal)
@@ -1626,7 +1581,7 @@ par(mfrow=c(1,1))
 t1_df <- data.frame(lagoslakeid=as.character(PRISM_gradient_df_UM$lagoslakeid), summer_tmax = PRISM_gradient_df_UM$summer_tmax,
                    summer_tmax_PRISM = PRISM_gradient_df_UM$summer_tmax_PRISM)
 t2_df <- data.frame(buffer100_gradient_df_UM$total_forest_pct_1992, lagoslakeid=as.character(buffer100_gradient_df_UM$lagoslakeid))
-t3_df <- data.frame(depth_gradient_df_UM$zmaxobs, lagoslakeid=as.character(depth_gradient_df_UM$lagoslakeid))
+t3_df <- data.frame(depth_gradient2_df_UM$maxdepth, lagoslakeid=as.character(depth_gradient2_df_UM$lagoslakeid))
 t4_df <- data.frame(iws_gradient_df_UM_areaclean$iws_lakeareaha, lagoslakeid=as.character(iws_gradient_df_UM_areaclean$lagoslakeid))
 #t5_df <- data.frame(color_mean$colort, lagoslakeid=as.character(color_mean$lagoslakeid)) #color omitted due to low sample size
 t6_df <- data.frame(TP_mean$TP, lagoslakeid=as.character(TP_mean$lagoslakeid))
@@ -1638,10 +1593,10 @@ RF_UM_df <- left_join(RF_UM_df, t4_df, by='lagoslakeid')
 RF_UM_df <- left_join(RF_UM_df, t6_df, by='lagoslakeid')
 RF_UM_df <- left_join(RF_UM_df, t7_df, by='lagoslakeid')
 
-colnames(RF_UM_df) <- c('lagoslakeid','summer_tmax','summer_tmax_PRISM','forest100m','zmaxobs','lakeareaha','TP','chla')
+colnames(RF_UM_df) <- c('lagoslakeid','summer_tmax','summer_tmax_PRISM','forest100m','maxdepth','lakeareaha','TP','chla')
 RF_UM_df <- RF_UM_df[complete.cases(RF_UM_df), ]
 set.seed(999)
-RF_UM_tmax <- randomForest(summer_tmax ~ forest100m + summer_tmax_PRISM + TP + chla,
+RF_UM_tmax <- randomForest(summer_tmax ~ forest100m + summer_tmax_PRISM + TP + chla + maxdepth + lakeareaha, 
                         data=RF_UM_df, ntree=500, importance=T)
 print(RF_UM_tmax)
 importance(RF_UM_tmax, type=1)
@@ -1665,7 +1620,7 @@ t2_df <- data.frame(wetland_pct = iws_conn_gradient_df_NE$iws_wl_allwetlandsdiss
                    lake_pct = iws_conn_gradient_df_NE$iws_lakes_overlapping_area_pct,
                    stream_density = iws_conn_gradient_df_NE$iws_streamdensity_streams_density_mperha,
                    lagoslakeid=iws_conn_gradient_df_NE$lagoslakeid)
-t3_df <- data.frame(zmaxobs = depth_gradient_df_NE$zmaxobs, lagoslakeid=depth_gradient_df_NE$lagoslakeid)
+t3_df <- data.frame(maxdepth = depth_gradient2_df_NE$maxdepth, lagoslakeid=depth_gradient2_df_NE$lagoslakeid)
 t4_df <- data.frame(lakeareaha = iws_gradient_df_NE_areaclean$iws_lakeareaha, lagoslakeid=iws_gradient_df_NE_areaclean$lagoslakeid,
                    iws_lake_ratio = iws_gradient_df_NE_areaclean$iws_lake_ratio)
 t5_df <- data.frame(lagoslakeid= iws_gradient_lulc_df_NE$lagoslakeid, total_forest_pct = iws_gradient_lulc_df_NE$total_forest_pct_1992,
@@ -1688,7 +1643,7 @@ RF_NE_df <- left_join(RF_NE_df, t9_df, by='lagoslakeid')
 RF_NE_df <- RF_NE_df[complete.cases(RF_NE_df), ]
 # not using lake pct in RF analysis because has so many zeros
 set.seed(888)
-RF_NE_ppt <- randomForest(summer_ppt ~ lakeareaha + summer_ppt_PRISM + zmaxobs + wetland_pct +
+RF_NE_ppt <- randomForest(summer_ppt ~ lakeareaha + summer_ppt_PRISM + maxdepth + wetland_pct +
                        stream_density + iws_lake_ratio + total_forest_pct + total_ag_pct + slope_mean +
                        runoff + groundwater + chla + TP , data=RF_NE_df, ntree=500, importance=T)
 print(RF_NE_ppt)
@@ -1708,7 +1663,7 @@ plot(RF_NE_ppt, xlim=c(0,500))
 t1_df <- data.frame(lagoslakeid=as.character(PRISM_gradient_df_NE$lagoslakeid), summer_tmax = PRISM_gradient_df_NE$summer_tmax,
                    summer_tmax_PRISM = PRISM_gradient_df_NE$summer_tmax_PRISM)
 t2_df <- data.frame(buffer100_gradient_df_NE$total_forest_pct_1992, lagoslakeid=as.character(buffer100_gradient_df_NE$lagoslakeid))
-t3_df <- data.frame(depth_gradient_df_NE$zmaxobs, lagoslakeid=as.character(depth_gradient_df_NE$lagoslakeid))
+t3_df <- data.frame(depth_gradient2_df_NE$maxdepth, lagoslakeid=as.character(depth_gradient2_df_NE$lagoslakeid))
 t4_df <- data.frame(iws_gradient_df_NE_areaclean$iws_lakeareaha, lagoslakeid=as.character(iws_gradient_df_NE_areaclean$lagoslakeid))
 #t5_df <- data.frame(color_mean$colort, lagoslakeid=as.character(color_mean$lagoslakeid))
 t6_df <- data.frame(TP_mean$TP, lagoslakeid=as.character(TP_mean$lagoslakeid))
@@ -1720,10 +1675,10 @@ RF_NE_df <- left_join(RF_NE_df, t4_df, by='lagoslakeid')
 RF_NE_df <- left_join(RF_NE_df, t6_df, by='lagoslakeid')
 RF_NE_df <- left_join(RF_NE_df, t7_df, by='lagoslakeid')
 
-colnames(RF_NE_df) <- c('lagoslakeid','summer_tmax','summer_tmax_PRISM','forest100m','zmaxobs','lakeareaha','TP','chla')
+colnames(RF_NE_df) <- c('lagoslakeid','summer_tmax','summer_tmax_PRISM','forest100m','maxdepth','lakeareaha','TP','chla')
 RF_NE_df <- RF_NE_df[complete.cases(RF_NE_df), ]
 set.seed(777)
-RF_NE_tmax <- randomForest(summer_tmax ~ lakeareaha + summer_tmax_PRISM + zmaxobs + TP + chla,
+RF_NE_tmax <- randomForest(summer_tmax ~ lakeareaha + summer_tmax_PRISM + maxdepth + TP + chla,
                         data=RF_NE_df, ntree=500, importance=T) #forest omitted due to neg variance explained
 print(RF_NE_tmax)
 importance(RF_NE_tmax, type=1)
@@ -1747,7 +1702,7 @@ t2_df <- data.frame(wetland_pct = iws_conn_gradient_df_UM$iws_wl_allwetlandsdiss
                    lake_pct = iws_conn_gradient_df_UM$iws_lakes_overlapping_area_pct,
                    stream_density = iws_conn_gradient_df_UM$iws_streamdensity_streams_density_mperha,
                    lagoslakeid=iws_conn_gradient_df_UM$lagoslakeid)
-t3_df <- data.frame(zmaxobs = depth_gradient_df_UM$zmaxobs, lagoslakeid=depth_gradient_df_UM$lagoslakeid)
+t3_df <- data.frame(maxdepth = depth_gradient2_df_UM$maxdepth, lagoslakeid=depth_gradient2_df_UM$lagoslakeid)
 t4_df <- data.frame(lakeareaha = iws_gradient_df_UM_areaclean$iws_lakeareaha, lagoslakeid=iws_gradient_df_UM_areaclean$lagoslakeid,
                    iws_lake_ratio = iws_gradient_df_UM_areaclean$iws_lake_ratio)
 t5_df <- data.frame(lagoslakeid= iws_gradient_lulc_df_UM$lagoslakeid, total_forest_pct = iws_gradient_lulc_df_UM$total_forest_pct_1992,
@@ -1770,8 +1725,8 @@ RF_UM_df <- left_join(RF_UM_df, t9_df, by='lagoslakeid')
 RF_UM_df <- RF_UM_df[complete.cases(RF_UM_df), ]
 # omitted slope, stream density, ag, iws_lake_ratio due to neg influence
 set.seed(666)
-RF_UM_ppt <- randomForest(summer_ppt ~ lakeareaha + summer_ppt_PRISM + zmaxobs + wetland_pct +
-                       total_forest_pct +
+RF_UM_ppt <- randomForest(summer_ppt ~ lakeareaha + summer_ppt_PRISM + maxdepth + wetland_pct +
+                       total_forest_pct + iws_lake_ratio + stream_density+ total_ag_pct + 
                        runoff + groundwater + chla + TP , data=RF_UM_df, ntree=500, importance=T)
 print(RF_UM_ppt)
 importance(RF_UM_ppt, type=1)
