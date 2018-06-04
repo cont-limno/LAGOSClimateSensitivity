@@ -1,6 +1,6 @@
 ######################## Compare PRISM to limno data #####################################################
 # Date: 9-11-17
-# updated: 1-31-18
+# updated: 6-4-18
 # Author: Ian McCullough, immccull@gmail.com
 # Note: NE (Northeast) refers to forested region, UM (Upper Midwest) refers to mixed agricultural region
 ##########################################################################################################
@@ -12,6 +12,7 @@ library(dplyr)
 library(pgirmess)
 library(Hmisc)
 library(randomForest)
+library(rgdal)
 
 #### define constants ####
 first_year = 1981 # full record is 1970-2011
@@ -830,8 +831,8 @@ iws_gradient_lulc_df_UM <- subset(iws_gradient_lulc_df, Region =='UM')
 iws_gradient_lulc_df_NE <- subset(iws_gradient_lulc_df, Region =='NE')
 
 # single variable plot of regions side by side
-plot_var = 'summer_ppt'
-gradient_var = 'total_forest_pct_1992' #'total_ag_pct_1992', 'iws_slope_mean', 'total_forest_pct_1992'
+plot_var = 'summer_tmax'
+gradient_var = 'total_ag_pct_1992' #'total_ag_pct_1992', 'iws_slope_mean', 'total_forest_pct_1992'
 par(mfrow=c(1,2))
 plot(iws_gradient_lulc_df_UM[,plot_var]~iws_gradient_lulc_df_UM[,gradient_var], 
      main=paste0(limno_var, ' Upper Midwest'), pch=20, col='red',
@@ -870,6 +871,35 @@ legend('topleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
 legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
 legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(iws_gradient_lulc_df_NE[,gradient_var]))))
 mtext(side=3, paste0('gradient variable = ',gradient_var, ', climate variable = ', plot_var), cex=0.75)
+
+### how do forested lakes in agriculture-dominated Upper Midwest respond?  
+# subset Upper Midwest to isolate lakes with high % forest in watershed
+# create subset with watersheds with > 50% forest and <20% agriculture
+UM_forested_iws_subset <- subset(iws_gradient_lulc_df_UM, total_forest_pct_1992 > 50 & total_ag_pct_1992 < 20)
+# boxplot(UM_forested_iws_subset$total_ag_pct_1992, main='Ag', ylim=c(0,100))
+# boxplot(UM_forested_iws_subset$total_forest_pct_1992, main='Forest', ylim=c(0,100))
+par(mfrow=c(1,2))
+# boxplot(UM_forested_iws_subset$summer_tmax, ylim=c(-1,1), main='Forest > 50%, Ag < 20%',
+#         ylab='sensitivity of Secchi to summer tmax')
+# mtext(side=3, paste0('n = ', nrow(UM_forested_iws_subset)))
+# boxplot(iws_gradient_lulc_df_UM$summer_tmax, ylim=c(-1,1), main='Full region',
+#         ylab='sensitivity of Secchi to summer tmax')
+# mtext(side=3, paste0('n = ', nrow(iws_gradient_lulc_df_UM)))
+# 
+# boxplot(UM_forested_iws_subset$summer_ppt, ylim=c(-1,1), main='Forest > 50%, Ag < 20%',
+#         ylab='sensitivity of Secchi to summer ppt')
+# mtext(side=3, paste0('n = ', nrow(UM_forested_iws_subset)))
+# boxplot(iws_gradient_lulc_df_UM$summer_ppt, ylim=c(-1,1), main='Full region',
+#         ylab='sensitivity of Secchi to summer ppt')
+# mtext(side=3, paste0('n = ', nrow(iws_gradient_lulc_df_UM)))
+
+# put into single boxplot
+UM_forested_iws_subset$GroupID <- 'Subset'
+iws_gradient_lulc_df_UM$GroupID <- 'FullRegion'
+boxplot(UM_forested_iws_melted$summer_tmax ~ UM_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
+        ylab='Correlation coefficient (r)', main='Summer tmax')
+boxplot(UM_forested_iws_melted$summer_ppt ~ UM_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
+        ylab='Correlation coefficient (r)', main='Summer precip')
 
 ################### what's the effect of a forest buffer right around the lake? ###################
 buffer100_lulc <- dt$buffer100m.lulc
