@@ -876,30 +876,27 @@ mtext(side=3, paste0('gradient variable = ',gradient_var, ', climate variable = 
 # subset Upper Midwest to isolate lakes with high % forest in watershed
 # create subset with watersheds with > 50% forest and <20% agriculture
 UM_forested_iws_subset <- subset(iws_gradient_lulc_df_UM, total_forest_pct_1992 > 50 & total_ag_pct_1992 < 20)
-# boxplot(UM_forested_iws_subset$total_ag_pct_1992, main='Ag', ylim=c(0,100))
-# boxplot(UM_forested_iws_subset$total_forest_pct_1992, main='Forest', ylim=c(0,100))
-par(mfrow=c(1,2))
-# boxplot(UM_forested_iws_subset$summer_tmax, ylim=c(-1,1), main='Forest > 50%, Ag < 20%',
-#         ylab='sensitivity of Secchi to summer tmax')
-# mtext(side=3, paste0('n = ', nrow(UM_forested_iws_subset)))
-# boxplot(iws_gradient_lulc_df_UM$summer_tmax, ylim=c(-1,1), main='Full region',
-#         ylab='sensitivity of Secchi to summer tmax')
-# mtext(side=3, paste0('n = ', nrow(iws_gradient_lulc_df_UM)))
-# 
-# boxplot(UM_forested_iws_subset$summer_ppt, ylim=c(-1,1), main='Forest > 50%, Ag < 20%',
-#         ylab='sensitivity of Secchi to summer ppt')
-# mtext(side=3, paste0('n = ', nrow(UM_forested_iws_subset)))
-# boxplot(iws_gradient_lulc_df_UM$summer_ppt, ylim=c(-1,1), main='Full region',
-#         ylab='sensitivity of Secchi to summer ppt')
-# mtext(side=3, paste0('n = ', nrow(iws_gradient_lulc_df_UM)))
+NE_forested_iws_subset <- subset(iws_gradient_lulc_df_NE, total_forest_pct_1992 > 50 & total_ag_pct_1992 < 20)
+
+#par(mfrow=c(1,2))
 
 # put into single boxplot
 UM_forested_iws_subset$GroupID <- 'Subset'
-iws_gradient_lulc_df_UM$GroupID <- 'FullRegion'
+iws_gradient_lulc_df_UM$GroupID <- 'MixedAg'
+iws_gradient_lulc_df_NE$GroupID <- 'Forested'
+UM_forested_iws_melted <- rbind.data.frame(UM_forested_iws_subset, iws_gradient_lulc_df_UM)
+dev.off()
 boxplot(UM_forested_iws_melted$summer_tmax ~ UM_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
         ylab='Correlation coefficient (r)', main='Summer tmax')
 boxplot(UM_forested_iws_melted$summer_ppt ~ UM_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
         ylab='Correlation coefficient (r)', main='Summer precip')
+UM_NE_forested_iws_melted <- rbind.data.frame(UM_forested_iws_melted, iws_gradient_lulc_df_NE)
+boxplot(UM_NE_forested_iws_melted$summer_ppt ~ UM_NE_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
+        ylab='Correlation coefficient (r)', main='Summer precip', col=c('orange','gray','gray'))
+
+par(mfrow=c(1,2))
+boxplot(NE_forested_iws_subset$summer_ppt, ylim=c(-1,1), main='NE')
+boxplot(UM_forested_iws_subset$summer_ppt, ylim=c(-1,1), main='UM')
 
 ################### what's the effect of a forest buffer right around the lake? ###################
 buffer100_lulc <- dt$buffer100m.lulc
