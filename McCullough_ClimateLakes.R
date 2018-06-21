@@ -563,34 +563,36 @@ final_clim_WQ_cor_summary <- cbind.data.frame(climateWQ_cor_UM_summary, climateW
 #write.csv(final_clim_WQ_cor_summary, "C:/Ian_GIS/GeographicPatterns/Tables/ClimateWQCorrelationSummary.csv")
 
 ################ paneled histogram of climate-water clarity correlations, comparing regions ############
-#png('C:/Ian_GIS/GeographicPatterns/Figures/paneled_hist.png',width = 2.5,height = 5.8,units = 'in',res=600) #was 3.88 by 9 in
-par(mfrow=c(3,1))
-par(mar=c(0.5,3,0.5,0.5)) #bot,left,top,right
+png('C:/Ian_GIS/GeographicPatterns/Figures/paneled_hist.png',width = 2.5,height = 3.87,units = 'in',res=600) #was 3.88 by 9 in
+par(mfrow=c(2,1))
+par(mar=c(2,3,0.5,0.5)) #bot,left,top,right
 # first plot
 plot_var = 'summer_ppt'
 hist(lake_output_NE[,plot_var], xlim=c(-0.9,0.9), ylim=c(0,55), col="orange", breaks=seq(-0.9,0.9,0.1),
      xaxt='n', las=1, xlab='', ylab='', main='')
 hist(lake_output_UM[,plot_var], add=T, xlim=c(-0.9,0.9), ylim=c(0,55), breaks=seq(-0.9,0.9,0.1), col=rgb(0.5,0.5,0.5, 0.5),
      xlab='', xaxt='n', yaxt='n', main='')
+abline(v=0, lty=2, lwd=2)
 axis(side=1, at=seq(-0.9,0.9,0.2), labels=seq(-0.9,0.9,0.2), cex.axis=0.8)
-legend('topright',legend=c('For','Ag'), col=c('orange','gray'), pch=c(15,15))
+legend('topright',legend=c('NE','MW'), col=c('orange','gray'), pch=c(15,15), bty='n')
 # second plot
 plot_var = 'summer_tmax'
 hist(lake_output_NE[,plot_var], xlim=c(-0.9,0.9), ylim=c(0,55), col="orange", breaks=seq(-0.9,0.9,0.1),
      xaxt='n', las=1, xlab='', ylab='', main='')
 hist(lake_output_UM[,plot_var], add=T, xlim=c(-0.9,0.9), ylim=c(0,55), breaks=seq(-0.9,0.9,0.1), col=rgb(0.5,0.5,0.5, 0.5),
      xlab='', xaxt='n', yaxt='n', main='')
+abline(v=0, lty=2, lwd=2)
 axis(side=1, at=seq(-0.9,0.9,0.2), labels=seq(-0.9,0.9,0.2), cex.axis=0.8)
-mtext("Correlation coefficient (r)", side=3, at=c(0,50), line=-2, cex=0.7)
-# third plot
-par(mar=c(2.5,3,0.5,0.5)) #bot,left,top,right
-plot_var = 'fall_tmin'
-hist(lake_output_NE[,plot_var], xlim=c(-0.9,0.9), ylim=c(0,55), col="orange", breaks=seq(-0.9,0.9,0.1),
-     xaxt='n', las=1, xlab='Correlation coefficient (r)', ylab='', main='')
-hist(lake_output_UM[,plot_var], add=T, xlim=c(-0.9,0.9), ylim=c(0,55), breaks=seq(-0.9,0.9,0.1), col=rgb(0.5,0.5,0.5, 0.5),
-     xlab='', xaxt='n', yaxt='n', main='')
-axis(side=1, at=seq(-0.9,0.9,0.2), labels=seq(-0.9,0.9,0.2), cex.axis=0.8)
-#dev.off()
+#mtext("Correlation coefficient (r)", side=3, at=c(0,50), line=-2, cex=0.7)
+# # third plot
+# par(mar=c(2.5,3,0.5,0.5)) #bot,left,top,right
+# plot_var = 'fall_tmin'
+# hist(lake_output_NE[,plot_var], xlim=c(-0.9,0.9), ylim=c(0,55), col="orange", breaks=seq(-0.9,0.9,0.1),
+#      xaxt='n', las=1, xlab='Correlation coefficient (r)', ylab='', main='')
+# hist(lake_output_UM[,plot_var], add=T, xlim=c(-0.9,0.9), ylim=c(0,55), breaks=seq(-0.9,0.9,0.1), col=rgb(0.5,0.5,0.5, 0.5),
+#      xlab='', xaxt='n', yaxt='n', main='')
+# axis(side=1, at=seq(-0.9,0.9,0.2), labels=seq(-0.9,0.9,0.2), cex.axis=0.8)
+dev.off()
 
 ################################ gradient analysis ####################################
 # relationships between climate sensitivities and ecological context variables
@@ -873,30 +875,29 @@ legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(iws_gradient
 mtext(side=3, paste0('gradient variable = ',gradient_var, ', climate variable = ', plot_var), cex=0.75)
 
 ### how do forested lakes in agriculture-dominated Upper Midwest respond?  
-# subset Upper Midwest to isolate lakes with high % forest in watershed
-# create subset with watersheds with > 50% forest and <20% agriculture
-UM_forested_iws_subset <- subset(iws_gradient_lulc_df_UM, total_forest_pct_1992 > 50 & total_ag_pct_1992 < 20)
-NE_forested_iws_subset <- subset(iws_gradient_lulc_df_NE, total_forest_pct_1992 > 50 & total_ag_pct_1992 < 20)
-
-#par(mfrow=c(1,2))
+# subset Upper Midwest to isolate lakes with high % forest/low % ag in watershed
+# create subset with watersheds with > 85% forest and <8% agriculture (median values in NE region)
+UM_forested_iws_subset <- subset(iws_gradient_lulc_df_UM, total_forest_pct_1992 >= 85 & total_ag_pct_1992 <= 8)
+UM_remaining_iws_subset <- subset(iws_gradient_lulc_df_UM, !(lagoslakeid %in% UM_forested_iws_subset$lagoslakeid))
 
 # put into single boxplot
 UM_forested_iws_subset$GroupID <- 'Subset'
-iws_gradient_lulc_df_UM$GroupID <- 'MixedAg'
+UM_remaining_iws_subset$GroupID <- 'MainMW'
+#iws_gradient_lulc_df_UM$GroupID <- 'MixedAg'
 iws_gradient_lulc_df_NE$GroupID <- 'Forested'
-UM_forested_iws_melted <- rbind.data.frame(UM_forested_iws_subset, iws_gradient_lulc_df_UM)
-dev.off()
-boxplot(UM_forested_iws_melted$summer_tmax ~ UM_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
-        ylab='Correlation coefficient (r)', main='Summer tmax')
-boxplot(UM_forested_iws_melted$summer_ppt ~ UM_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
-        ylab='Correlation coefficient (r)', main='Summer precip')
+UM_forested_iws_melted <- rbind.data.frame(UM_forested_iws_subset, UM_remaining_iws_subset)
+#dev.off()
 UM_NE_forested_iws_melted <- rbind.data.frame(UM_forested_iws_melted, iws_gradient_lulc_df_NE)
-boxplot(UM_NE_forested_iws_melted$summer_ppt ~ UM_NE_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
-        ylab='Correlation coefficient (r)', main='Summer precip', col=c('orange','gray','gray'))
 
-par(mfrow=c(1,2))
-boxplot(NE_forested_iws_subset$summer_ppt, ylim=c(-1,1), main='NE')
-boxplot(UM_forested_iws_subset$summer_ppt, ylim=c(-1,1), main='UM')
+#png('C:/Ian_GIS/GeographicPatterns/Figures/NE_UM_Boxplot.png',width = 6,height = 6, units = 'in',res=600)  
+boxplot(UM_NE_forested_iws_melted$summer_ppt ~ UM_NE_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
+        ylab='Correlation coefficient (r)', main='Sensitivity to summer precipitation', col=c('orange','gray','gray'),
+        names=c('NE','MW subset 1','MW subset 2'))
+#dev.off()
+
+# pairwise comparisons among groups (2 methods) (Forested region=northeastern region)
+pairwise.t.test(UM_NE_forested_iws_melted$summer_ppt, UM_NE_forested_iws_melted$GroupID, p.adj='holm')
+TukeyHSD(aov(summer_ppt ~ GroupID, data=UM_NE_forested_iws_melted))
 
 ################### what's the effect of a forest buffer right around the lake? ###################
 buffer100_lulc <- dt$buffer100m.lulc
@@ -1076,6 +1077,11 @@ hu12_gradient_df_NE <- subset(hu12_gradient_df, Region=='NE')
 
 ############## climate gradient analysis with Ian-extracted PRISM ####################
 # warning: slow to load large csv (contains PRISM climate normals for all lakes)
+# big_climate_df from: 
+# Collins, S. M., et al. 2018. LAGOS-NE Annual, seasonal, and monthly climate data for lakes 
+# and watersheds in a 17-state region of the U.S.. 
+# Environmental Data Initiative. http://dx.doi:10.6073/pasta/4abe86a2c00dc9a628924aa149d7bf34. 
+# Dataset accessed 6/19/2018.
 big_climate_df <- read.csv("C:/Ian_GIS/lagoslakeid_PRISM_Normals_1981_2010.csv")
 big_climate_df[,1] <- NULL #delete useless first column
 clim_var_colnames <- big_climate_df$Var #create vector of clim variable names
@@ -1239,7 +1245,7 @@ mtext(side=3, paste0('gradient variable = ',gradient_var, ', climate variable = 
 
 ############## calculate gradients of TP, chla and true color ##########
 WQ_gradients_df <- data.frame(lagoslakeid=epi_nutr$lagoslakeid, colort = epi_nutr$colort, TP = epi_nutr$tp,
-                             chla = epi_nutr$chla, sampledate= epi_nutr$sampledate, sampleyear=epi_nutr$sampleyear)
+                             chla = epi_nutr$chla, DOC=epi_nutr$doc, sampledate= epi_nutr$sampledate, sampleyear=epi_nutr$sampleyear)
 
 WQ_gradients_df$sampledate <- as.Date(WQ_gradients_df$sampledate, format="%m/%d/%Y")
 WQ_gradients_df$monthday <- format(WQ_gradients_df$sampledate, format="%m%d")
@@ -1247,6 +1253,36 @@ WQ_gradients_df$monthday <- format(WQ_gradients_df$sampledate, format="%m%d")
 # subset by sample date cutoffs specified above
 WQ_gradients_df <- WQ_gradients_df[WQ_gradients_df$monthday >= first_day & WQ_gradients_df$monthday <= last_day,]
 WQ_gradients_df <- subset(WQ_gradients_df, sampleyear >= first_year & sampleyear <= last_year)
+
+## DOC 
+# calculate annual means for each lake (by lagoslakeid and sampleyear)
+DOC_mean <- aggregate(WQ_gradients_df$DOC, by=list(WQ_gradients_df$lagoslakeid, WQ_gradients_df$sampleyear), 
+                        FUN='mean')
+colnames(DOC_mean) <- c('lagoslakeid','sampleyear','DOC')
+
+DOC_mean <- DOC_mean[!(is.na(DOC_mean$DOC) | DOC_mean$DOC==""), ] #remove rows with NA for limno var
+DOC_mean_n <- DOC_mean %>% count(lagoslakeid)
+
+# get single mean value by lagoslakeid
+DOC_mean <- aggregate(DOC_mean$DOC, by=list(DOC_mean$lagoslakeid), FUN='mean')
+colnames(DOC_mean) <- c('lagoslakeid','DOC')
+
+# similar to color, few lakes in midwest with DOC data
+DOC_gradient <- merge(big_Mama, DOC_mean, by='lagoslakeid')
+DOC_gradient <- merge(DOC_gradient, state_df, by.x='lagoslakeid', by.y='lagoslakei')
+DOC_gradient_df_UM <- subset(DOC_gradient, Region =='UM')
+DOC_gradient_df_NE <- subset(DOC_gradient, Region =='NE')
+
+boxplot(DOC_gradient$DOC ~ DOC_gradient$Region, col=c('orange','gray'), main='DOC')
+
+map_DOC_lakes <- DOC_gradient$lagoslakeid
+map_DOC_lakes <- subset(lakes_4ha_points, lagoslakei %in% map_DOC_lakes)
+plot(LAGOS_NE_states)
+plot(map_DOC_lakes, add=T, pch=20, col='dodgerblue')
+
+# does DOC concentration affect summer ppt sensitivity?
+plot(summer_ppt ~ DOC, DOC_gradient_df_NE, col='dodgerblue', pch=20)
+cor(DOC_gradient_df_NE$DOC, DOC_gradient_df_NE$summer_ppt)
 
 ## color
 # calculate annual means for each lake (by lagoslakeid and sampleyear)
