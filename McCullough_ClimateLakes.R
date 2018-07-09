@@ -1,6 +1,6 @@
 ######################## Compare PRISM to limno data #####################################################
 # Date: 9-11-17
-# updated: 6-4-18
+# updated: 7-9-18
 # Author: Ian McCullough, immccull@gmail.com
 # Note: NE (Northeast) refers to forested region, UM (Upper Midwest) refers to mixed agricultural region
 ##########################################################################################################
@@ -1665,6 +1665,15 @@ print(RF_UM_tmax)
 importance(RF_UM_tmax, type=1)
 importance(RF_UM_tmax, type=2) #MSE for regression
 
+# partial dependency plots
+imp <- importance(RF_UM_tmax)
+impvar <- rownames(imp)[order(imp[, 1], decreasing=TRUE)]
+op <- par(mfrow=c(2, 3))
+for (i in seq_along(impvar)) {
+  partialPlot(RF_UM_tmax, RF_UM_df, impvar[i], xlab=impvar[i],
+              main=paste("Partial Dependence on", impvar[i]), ylim=c(-1,1), las=1)
+}
+
 # plot1 is %Increase in MSE, with larger increases for a given variable indicating that variable is relatively more important
 # high %IncMSE means without that variable, that much predictive capacity is lost 
 # a neg value therefore means you are better off not including that variable
@@ -1721,6 +1730,15 @@ varImpPlot(RF_NE_ppt, main='Variable importance, summer ppt sensitivity - NE')
 # diagnostic for how many trees to run? Processing is done in seconds, so I don't see major downside to large # of trees unless error increases
 plot(RF_NE_ppt, xlim=c(0,500))
 
+# partial dependency plots
+imp <- importance(RF_NE_ppt)
+impvar <- rownames(imp)[order(imp[, 1], decreasing=TRUE)]
+op <- par(mfrow=c(2, 3))
+for (i in seq_along(impvar)) {
+  partialPlot(RF_NE_ppt, RF_NE_df, impvar[i], xlab=impvar[i],
+              main=paste("Partial Dependence on", impvar[i]), ylim=c(-1,1), las=1)
+}
+
 #### reciprocal random forests for comparison across regions
 # NE - summer tmax
 t1_df <- data.frame(lagoslakeid=as.character(PRISM_gradient_df_NE$lagoslakeid), summer_tmax = PRISM_gradient_df_NE$summer_tmax,
@@ -1754,6 +1772,15 @@ varImpPlot(RF_NE_tmax, main='Variable importance, summer tmax sensitivity - NE')
 
 # diagnostic for how many trees to run? Processing is done in seconds, so I don't see major downside to large # of trees
 plot(RF_NE_tmax, xlim=c(0,5000))
+
+# partial dependency plots
+imp <- importance(RF_NE_tmax)
+impvar <- rownames(imp)[order(imp[, 1], decreasing=TRUE)]
+op <- par(mfrow=c(2, 3))
+for (i in seq_along(impvar)) {
+  partialPlot(RF_NE_tmax, RF_NE_df, impvar[i], xlab=impvar[i],
+              main=paste("Partial Dependence on", impvar[i]), ylim=c(-1,1), las=1)
+}
 
 ## UM - summer ppt
 # Create data frame for UM with variables of interest
@@ -1802,4 +1829,14 @@ varImpPlot(RF_UM_ppt, main='Variable importance, summer ppt sensitivity - UM')
 
 # diagnostic for how many trees to run? Processing is done in seconds, so I don't see major downside to large # of trees unless error increases
 plot(RF_UM_ppt, xlim=c(0,500))
+
+# partial dependency plots
+imp <- importance(RF_UM_ppt)
+impvar <- rownames(imp)[order(imp[, 1], decreasing=TRUE)]
+op <- par(mfrow=c(2, 3))
+for (i in seq_along(impvar)) {
+  partialPlot(RF_UM_ppt, RF_UM_df, impvar[i], xlab=impvar[i],
+              main=paste("Partial Dependence on", impvar[i]), ylim=c(-1,1), las=1)
+}
+
 ######################## end ###########################
