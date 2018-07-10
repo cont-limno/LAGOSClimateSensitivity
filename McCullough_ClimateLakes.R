@@ -1401,7 +1401,7 @@ par(mfrow=c(2,2))
 par(mar=c(5,4,1,1))
 plot(chla_gradient_df_NE[,plot_var]~chla_gradient_df_NE[,gradient_var], 
      pch=20, col='orange', main='',
-     xlim=c(0,40), ylim=c(-1,1), ylab='correlation coefficient (r)',
+     xlim=c(), ylim=c(-1,1), ylab='correlation coefficient (r)',
      xlab='Chlorophyll-a (µg/L)', las=1)
 abline(0,0, lty=2)
 # create linear model to calculate coef (slope)
@@ -1423,7 +1423,7 @@ gradient_var = 'TP'
 plot_var = 'summer_ppt'
 plot(TP_gradient_df_NE[,plot_var]~TP_gradient_df_NE[,gradient_var], 
      main='', pch=20, col='orange',
-     xlim=c(0,50), ylim=c(-1,1), ylab='', yaxt='n',
+     xlim=c(0,100), ylim=c(-1,1), ylab='', yaxt='n',
      xlab='Total phosphorus (µg/L)', las=1)
 abline(0,0, lty=2)
 # create linear model to calculate coef (slope)
@@ -1434,7 +1434,8 @@ cortest <- cor.test(TP_gradient_df_NE[,plot_var], TP_gradient_df_NE[,gradient_va
                    method='pearson',conf.level=(1-pvalue_cutoff)) #get pvalue from correlation so it can be plotted
 plot_pval <- cortest$p.value
 legend('topright', bty='n', legend=paste0('r = ',round(cor(TP_gradient_df_NE[,plot_var], TP_gradient_df_NE[,gradient_var], 
-                                                           use='pairwise.complete.obs'), digits=3)))
+                                                           use='pairwise.complete.obs'), digits=3)), inset=c(0,0.2))
+
 legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
 #legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
 legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(TP_gradient_df_NE[,gradient_var]))))
@@ -1467,7 +1468,7 @@ gradient_var = 'maxdepth'
 par(mar=c(5,1,1,4))
 plot(depth_gradient2_df_NE[,plot_var]~depth_gradient2_df_NE[,gradient_var], 
      main='',pch=20, col='orange',
-     xlim=c(0,50), ylim=c(-1,1), ylab='', yaxt='n',
+     xlim=c(0,100), ylim=c(-1,1), ylab='', yaxt='n',
      xlab='Maximum depth (m)')
 abline(0,0, lty=2)
 lm <- lm(depth_gradient2_df_NE[,plot_var]~ depth_gradient2_df_NE[,gradient_var])
@@ -1491,7 +1492,7 @@ gradient_var = 'TP'
 plot_var = 'summer_tmax'
 plot(TP_gradient_df_UM[,plot_var]~TP_gradient_df_UM[,gradient_var], 
      main='', pch=20, col='gray66',
-     xlim=c(0,50), ylim=c(-1,1), ylab='correlation coefficient (r)',
+     xlim=c(0,100), ylim=c(-1,1), ylab='correlation coefficient (r)',
      xlab='Total phosphorus (µg/L)', las=1)
 abline(0,0, lty=2)
 # create linear model to calculate coef (slope)
@@ -1558,7 +1559,7 @@ gradient_var = 'maxdepth'
 par(mar=c(5,1,1,4))
 plot(depth_gradient2_df_UM[,plot_var]~depth_gradient2_df_UM[,gradient_var], 
      pch=20, col='gray66', main='',
-     xlim=c(0,50), ylim=c(-1,1), ylab='', yaxt='n',
+     xlim=c(0,100), ylim=c(-1,1), ylab='', yaxt='n',
      xlab='Maximum depth (m)')
 abline(0,0, lty=2)
 # create linear model to calculate coef (slope)
