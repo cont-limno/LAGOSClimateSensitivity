@@ -563,7 +563,8 @@ final_clim_WQ_cor_summary <- cbind.data.frame(climateWQ_cor_UM_summary, climateW
 #write.csv(final_clim_WQ_cor_summary, "C:/Ian_GIS/GeographicPatterns/Tables/ClimateWQCorrelationSummary.csv")
 
 ################ paneled histogram of climate-water clarity correlations, comparing regions ############
-png('C:/Ian_GIS/GeographicPatterns/Figures/paneled_hist.png',width = 2.5,height = 3.87,units = 'in',res=600) #was 3.88 by 9 in
+#png('C:/Ian_GIS/GeographicPatterns/Figures/paneled_hist.png',width = 2.5,height = 3.87,units = 'in',res=600) #was 3.88 by 9 in
+jpeg('C:/Ian_GIS/GeographicPatterns/Figures/FinalFigures/paneled_hist.jpeg',width = 2.5,height = 3.87,units = 'in',res=600) 
 par(mfrow=c(2,1))
 par(mar=c(2,3,0.5,0.5)) #bot,left,top,right
 # first plot
@@ -890,10 +891,11 @@ UM_forested_iws_melted <- rbind.data.frame(UM_forested_iws_subset, UM_remaining_
 UM_NE_forested_iws_melted <- rbind.data.frame(UM_forested_iws_melted, iws_gradient_lulc_df_NE)
 
 #png('C:/Ian_GIS/GeographicPatterns/Figures/NE_UM_Boxplot.png',width = 6,height = 6, units = 'in',res=600)  
+jpeg('C:/Ian_GIS/GeographicPatterns/Figures/FinalFigures/NE_UM_Boxplot.jpeg',width = 6,height = 6, units = 'in',res=600)  
 boxplot(UM_NE_forested_iws_melted$summer_ppt ~ UM_NE_forested_iws_melted$GroupID, ylim=c(-1,1), las=1,
         ylab='Correlation coefficient (r)', main='Sensitivity to summer precipitation', col=c('orange','gray','gray'),
         names=c('NE','MW subset 1','MW subset 2'))
-#dev.off()
+dev.off()
 
 # pairwise comparisons among groups (2 methods) (Forested region=northeastern region)
 pairwise.t.test(UM_NE_forested_iws_melted$summer_ppt, UM_NE_forested_iws_melted$GroupID, p.adj='holm')
@@ -1394,6 +1396,7 @@ nrow(subset(TP_gradient_df_UM, TP >= 30)) #eutro
 ########## paneled gradient plots for paper ############
 # summer ppt sensitivity
 #png('C:/Ian_GIS/GeographicPatterns/Figures/CorPlot_summer_ppt_panel.png',width = 6,height = 6, units = 'in',res=600)  
+jpeg('C:/Ian_GIS/GeographicPatterns/Figures/FinalFigures/CorPlot_summer_ppt_panel.jpeg',width = 6,height = 6, units = 'in',res=600)  
 # first plot
 plot_var = 'summer_ppt'
 gradient_var = 'chla'
@@ -1481,10 +1484,11 @@ legend('topright', bty='n', legend=paste0('r = ',round(cor(depth_gradient2_df_NE
 legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
 #legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
 legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(depth_gradient2_df_NE[,gradient_var]))))
-#dev.off()
+dev.off()
 
 ## summer tmax sensitivity paneled plot
 #png('C:/Ian_GIS/GeographicPatterns/Figures/CorPlot_summer_tmax_panel.png',width = 6,height = 6, units = 'in',res=600)  
+jpeg('C:/Ian_GIS/GeographicPatterns/Figures/FinalFigures/CorPlot_summer_tmax_panel.jpeg',width = 6,height = 6, units = 'in',res=600)  
 par(mfrow=c(2,2))
 # first plot
 par(mar=c(5,4,1,1))
@@ -1574,7 +1578,7 @@ legend('topright', bty='n', legend=paste0('r = ',round(cor(depth_gradient2_df_UM
 legend('bottomleft', bty='n', legend=paste0('p = ', round(plot_pval, digits=3)))
 #legend('bottomleft', bty='n', legend=paste0('coef = ', slope))
 legend('bottomright', bty='n', legend=paste0('n = ', length(na.omit(depth_gradient2_df_UM[,gradient_var]))))
-#dev.off()
+dev.off()
 
 ##### merge together gradient analyses from seasonal clim variables #####
 seasonal_gradients_df <- cbind.data.frame(LAGOS_depth_cor_seasonal,
